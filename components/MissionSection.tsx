@@ -60,9 +60,20 @@ export default function MissionSection() {
     const section = sectionRef.current;
     if (!section) return;
 
-    let timer: ReturnType<typeof setTimeout>;
+    let timer1: ReturnType<typeof setTimeout> | undefined;
+    let timer2: ReturnType<typeof setTimeout> | undefined;
+    let loadRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const handleLoad = () => {
+      loadRefreshTimer = setTimeout(() => {
+        ScrollTrigger.refresh();
+        loadRefreshTimer = undefined;
+      }, 500);
+    };
+    window.addEventListener("load", handleLoad);
+
     const ctx = gsap.context(() => {
-      timer = setTimeout(() => {
+      timer1 = setTimeout(() => {
         ScrollTrigger.refresh();
 
         ScrollTrigger.create({
@@ -72,6 +83,7 @@ export default function MissionSection() {
           pin: true,
           pinSpacing: true,
           scrub: 1,
+          refreshPriority: -1,
           onUpdate: (self) => {
             const p = self.progress;
 
@@ -124,11 +136,18 @@ export default function MissionSection() {
             });
           },
         });
-      }, 500);
+      }, 1500);
+
+      timer2 = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 3000);
     }, section);
 
     return () => {
-      clearTimeout(timer);
+      if (timer1 !== undefined) clearTimeout(timer1);
+      if (timer2 !== undefined) clearTimeout(timer2);
+      if (loadRefreshTimer !== undefined) clearTimeout(loadRefreshTimer);
+      window.removeEventListener("load", handleLoad);
       ctx.revert();
     };
   }, []);
@@ -152,9 +171,8 @@ export default function MissionSection() {
       >
         {/* Left — 3D Player */}
         <div
-          className="w-full h-[40vh] md:h-auto md:w-[45%]"
+          className="w-full h-[40vh] md:h-auto md:w-[45%] relative"
           style={{
-            position: "relative",
             padding: "20px",
           }}
         >
@@ -172,14 +190,14 @@ export default function MissionSection() {
         </Canvas>
       </div>
 
-        {/* Center — Number indicators */}
-        <div
-          className="hidden md:flex flex-col justify-center items-center gap-6"
-          style={{
-            width: "10%",
-            height: "100%",
-          }}
-        >
+      {/* Center — Number indicators */}
+      <div
+        className="hidden md:flex flex-col justify-center items-center h-full"
+        style={{
+          width: "10%",
+          gap: "24px",
+        }}
+      >
         {items.map((item, i) => (
           <span
             key={item.n}

@@ -9,6 +9,7 @@ import VideoScrollSection from "@/components/VideoScrollSection";
 import PlayerMarquee from "@/components/PlayerMarquee";
 import EvaluationTimeline from "@/components/EvaluationTimeline";
 import LocationsSection from "@/components/LocationsSection";
+import CoachesSection from "@/components/CoachesSection";
 
 const MissionSection = dynamic(() => import("@/components/MissionSection"), {
   ssr: false,
@@ -30,6 +31,7 @@ export default function Home() {
       <MissionSection />
       <EvaluationTimeline />
       <LocationsSection />
+      <CoachesSection />
     </main>
   );
 }
