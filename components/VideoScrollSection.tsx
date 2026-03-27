@@ -1,243 +1,262 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+const SENTENCE_1 = "A professional environment is where";
+const SENTENCE_2 = "creativity meets a winning mentality.";
 
 export default function VideoScrollSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const letterRefs1 = useRef<HTMLSpanElement[]>([]);
-  const letterRefs2 = useRef<HTMLSpanElement[]>([]);
-  const textRef = useRef<HTMLDivElement>(null);
-
-  const sentence1 = "A professional environment";
-  const sentence2 = "is where creativity meets a winning mentality.";
+  const letterRefs = useRef<HTMLSpanElement[]>([]);
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const lastTimeRef = useRef(0);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
+    const wrapper = wrapperRef.current;
     const box = boxRef.current;
     const video = videoRef.current;
-    const wrapper = wrapperRef.current;
-    if (!box || !video || !wrapper) return;
 
-    // Phase 1: trapezoid expands to fullscreen as it enters viewport
-    gsap.fromTo(
-      box,
-      {
-        width: "88%",
-        height: "60vh",
-        borderRadius: "20px 20px 0 0",
-        clipPath: "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)",
-      },
-      {
-        width: "100%",
-        height: "100vh",
-        borderRadius: "0px",
-        clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-        ease: "none",
-        scrollTrigger: {
-          trigger: wrapper,
-          start: "top bottom",
-          end: "top top",
-          scrub: true,
+    if (!wrapper || !box || !video) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    let onLoaded: () => void;
+
+    const ctx = gsap.context(() => {
+      // Phase 1 — Circle expands as section enters viewport (before pin)
+      ScrollTrigger.create({
+        trigger: wrapper,
+        start: "top 90%",
+        end: "top 10%",
+        scrub: true,
+        onUpdate: (self) => {
+          const p = self.progress;
+          const endRadius = Math.max(window.innerWidth, window.innerHeight) * 1.5;
+          const radius = p * endRadius;
+          const centerY = window.innerHeight * 0.5;
+          box.style.clipPath = p >= 0.99 ? "none" : `circle(${radius}px at 50% ${centerY}px)`;
         },
-      }
-    );
+      });
 
-    // Phase 2: video scrubs frame by frame while pinned
-    let lastTime = 0;
-    const setupScrub = () => {
-      gsap.to({}, {
-        scrollTrigger: {
+      let scrubSetup = false;
+      const setupScrub = () => {
+        if (scrubSetup) return;
+        scrubSetup = true;
+
+        ScrollTrigger.create({
           trigger: wrapper,
           start: "top top",
           end: "+=300%",
-          pin: wrapper,
+          pin: true,
           scrub: 1,
           onUpdate: (self) => {
-            if (video.duration) {
+            if (video.duration && !isNaN(video.duration)) {
               const newTime = self.progress * video.duration;
-              if (Math.abs(newTime - lastTime) > 0.033) {
+              if (Math.abs(newTime - lastTimeRef.current) > 0.033) {
                 video.currentTime = newTime;
-                lastTime = newTime;
+                lastTimeRef.current = newTime;
               }
             }
           },
-        },
-      });
+        });
 
-      const len1 = letterRefs1.current.length;
-      const len2 = letterRefs2.current.length;
+        // Text reveal — letter-by-letter
+        ScrollTrigger.create({
+          trigger: wrapper,
+          start: "top top",
+          end: "+=300%",
+          scrub: 1,
+          onUpdate: (self) => {
+            const p = self.progress;
 
-      ScrollTrigger.create({
-        trigger: wrapper,
-        start: "top top",
-        end: "+=300%",
-        scrub: 1,
-        onUpdate: (self) => {
-          const progress = self.progress;
+            const len1 = SENTENCE_1.length;
+            const len2 = SENTENCE_2.length;
 
-          // Sentence 1: 0-50%, fade out at 45-50%
-          letterRefs1.current.forEach((el, i) => {
-            if (!el) return;
-            const revealStart = (i / len1) * 0.5;
-            const revealEnd = revealStart + 0.03;
-            const colorEnd = revealStart + 0.02;
+            const s1RevealEnd = 0.5;
+            const s1FadeStart = 0.45;
+            const s2RevealStart = 0.5;
 
-            if (progress >= 0.45) {
-              const fade = 1 - (progress - 0.45) / 0.05;
-              el.style.opacity = String(Math.max(0, fade));
-            } else if (progress < revealStart) {
-              el.style.opacity = "0";
-            } else if (progress < revealEnd) {
-              el.style.opacity = String((progress - revealStart) / (revealEnd - revealStart));
-              el.style.color = "#3b82f6";
-            } else if (progress < colorEnd) {
-              el.style.opacity = "1";
-              const t = Math.min(1, (progress - revealStart) / 0.02);
-              el.style.color =
-                t >= 1
-                  ? "rgba(255,255,255,0.95)"
-                  : `rgb(${59 + 196 * t}, ${130 + 125 * t}, ${246 + 9 * t})`;
-            } else {
-              el.style.opacity = "1";
-              el.style.color = "rgba(255,255,255,0.95)";
-            }
-          });
+            letterRefs.current.forEach((el, i) => {
+              if (!el) return;
+              if (i < len1) {
+                const letterProgress = (i / len1) * s1RevealEnd * 0.9;
+                const letterRevealEnd = letterProgress + 0.02;
+                if (p >= s1FadeStart) {
+                  const fade = 1 - (p - s1FadeStart) / 0.05;
+                  el.style.opacity = String(Math.max(0, fade));
+                } else if (p < letterProgress) {
+                  el.style.opacity = "0";
+                } else if (p < letterRevealEnd) {
+                  el.style.opacity = String((p - letterProgress) / (letterRevealEnd - letterProgress));
+                  el.style.color = "#3b82f6";
+                } else if (p < letterRevealEnd + 0.02) {
+                  const t = Math.min(1, (p - letterRevealEnd) / 0.02);
+                  el.style.opacity = "1";
+                  el.style.color = t >= 1 ? "#ffffff" : `rgb(${59 + 196 * t}, ${130 + 125 * t}, ${246 + 9 * t})`;
+                } else {
+                  el.style.opacity = "1";
+                  el.style.color = "#ffffff";
+                }
+              } else {
+                const idx = i - len1;
+                const letterProgress = s2RevealStart + (idx / len2) * (1 - s2RevealStart) * 0.9;
+                const letterRevealEnd = letterProgress + 0.02;
+                if (p < letterProgress) {
+                  el.style.opacity = "0";
+                } else if (p < letterRevealEnd) {
+                  el.style.opacity = String((p - letterProgress) / (letterRevealEnd - letterProgress));
+                  el.style.color = "#3b82f6";
+                } else if (p < letterRevealEnd + 0.02) {
+                  const t = Math.min(1, (p - letterRevealEnd) / 0.02);
+                  el.style.opacity = "1";
+                  el.style.color = t >= 1 ? "#ffffff" : `rgb(${59 + 196 * t}, ${130 + 125 * t}, ${246 + 9 * t})`;
+                } else {
+                  el.style.opacity = "1";
+                  el.style.color = "#ffffff";
+                }
+              }
+            });
+          },
+        });
+      };
 
-          // Sentence 2: 50-100%, letter-by-letter blue → white
-          letterRefs2.current.forEach((el, i) => {
-            if (!el) return;
-            const revealStart = 0.5 + (i / len2) * 0.5;
-            const revealEnd = revealStart + 0.03;
-            const colorEnd = revealStart + 0.02;
+      onLoaded = () => setupScrub();
+      if (video.readyState >= 2) {
+        setupScrub();
+      } else {
+        video.addEventListener("loadedmetadata", onLoaded);
+      }
 
-            if (progress < revealStart) {
-              el.style.opacity = "0";
-            } else if (progress < revealEnd) {
-              el.style.opacity = String((progress - revealStart) / (revealEnd - revealStart));
-              el.style.color = "#3b82f6";
-            } else if (progress < colorEnd) {
-              el.style.opacity = "1";
-              const t = Math.min(1, (progress - revealStart) / 0.02);
-              el.style.color =
-                t >= 1
-                  ? "rgba(255,255,255,0.95)"
-                  : `rgb(${59 + 196 * t}, ${130 + 125 * t}, ${246 + 9 * t})`;
-            } else {
-              el.style.opacity = "1";
-              el.style.color = "rgba(255,255,255,0.95)";
-            }
-          });
-        },
-      });
+      timer = setTimeout(() => ScrollTrigger.refresh(), 500);
+    }, wrapper);
+
+    return () => {
+      clearTimeout(timer);
+      video.removeEventListener("loadedmetadata", onLoaded);
+      ctx.revert();
     };
-
-    if (video.readyState >= 2) setupScrub();
-    else video.addEventListener("loadedmetadata", setupScrub);
-
-    return () => ScrollTrigger.getAll().forEach((t) => t.kill());
   }, []);
 
   return (
     <div
       ref={wrapperRef}
-      style={{ position: "relative", marginTop: "-100px", zIndex: 2 }}
+      style={{
+        position: "relative",
+        marginTop: "0",
+        zIndex: 2,
+      }}
     >
       <div
+        ref={boxRef}
         style={{
-          position: "sticky",
-          top: 0,
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "flex-end",
-          background: "transparent",
+          width: "100%",
+          height: "100vh",
+          position: "relative",
+          clipPath: "circle(0px at 50% 50%)",
         }}
       >
-        <div
-          ref={boxRef}
+        <video
+          ref={videoRef}
+          src="/video/meg-finish.mp4"
+          muted
+          playsInline
+          preload="auto"
+          crossOrigin="anonymous"
           style={{
-            width: "88%",
-            height: "60vh",
-            margin: "0 auto",
-            borderRadius: "20px 20px 0 0",
-            overflow: "hidden",
-            position: "relative",
-            clipPath: "polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%)",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+        <div
+          ref={textContainerRef}
+          style={{
+            position: "absolute",
+            bottom: "25%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "90%",
+            zIndex: 10,
+            textAlign: "center",
+            fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
+            fontWeight: 700,
+            lineHeight: 1.1,
           }}
         >
-          <video
-            ref={videoRef}
-            src="/video/meg-finish.mp4"
-            crossOrigin="anonymous"
-            muted
-            playsInline
-            preload="auto"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-          <div
-            ref={textRef}
-            style={{
-              position: "absolute",
-              bottom: "25%",
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 10,
-              textAlign: "center",
-              width: "90%",
-              pointerEvents: "none",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div>
-              {sentence1.split("").map((char, i) => (
-                <span
-                  key={`1-${i}`}
-                  ref={(el) => {
-                    if (el) letterRefs1.current[i] = el;
-                  }}
-                  style={{
-                    display: "inline-block",
-                    opacity: 0,
-                    color: "#3b82f6",
-                    fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
-                    fontWeight: "700",
-                    lineHeight: "1.1",
-                    letterSpacing: "0.02em",
-                    whiteSpace: "pre",
-                  }}
-                >
-                  {char}
-                </span>
-              ))}
-            </div>
-            <div>
-              {sentence2.split("").map((char, i) => (
-                <span
-                  key={`2-${i}`}
-                  ref={(el) => {
-                    if (el) letterRefs2.current[i] = el;
-                  }}
-                  style={{
-                    display: "inline-block",
-                    opacity: 0,
-                    color: "#3b82f6",
-                    fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
-                    fontWeight: "700",
-                    lineHeight: "1.1",
-                    letterSpacing: "0.02em",
-                    whiteSpace: "pre",
-                  }}
-                >
-                  {char}
-                </span>
-              ))}
-            </div>
-          </div>
+          {SENTENCE_1.split(" ").map((word, wordIndex) => {
+            const words = SENTENCE_1.split(" ");
+            const startIdx = words
+              .slice(0, wordIndex)
+              .reduce((acc, w) => acc + w.length + 1, 0);
+            return (
+              <span
+                key={`s1-w-${wordIndex}`}
+                style={{ display: "inline-block", whiteSpace: "nowrap" }}
+              >
+                {word.split("").map((char, charIndex) => (
+                  <span
+                    key={`s1-${startIdx + charIndex}`}
+                    ref={(el) => {
+                      if (el) letterRefs.current[startIdx + charIndex] = el;
+                    }}
+                    style={{ display: "inline-block", opacity: 0 }}
+                  >
+                    {char}
+                  </span>
+                ))}
+                {wordIndex < words.length - 1 && (
+                  <span
+                    ref={(el) => {
+                      if (el) letterRefs.current[startIdx + word.length] = el;
+                    }}
+                    style={{ display: "inline-block", width: "0.3em" }}
+                  >
+                    &nbsp;
+                  </span>
+                )}
+              </span>
+            );
+          })}
+          <span style={{ display: "inline-block", width: "0.3em" }}> </span>
+          {SENTENCE_2.split(" ").map((word, wordIndex) => {
+            const words = SENTENCE_2.split(" ");
+            const startIdx =
+              SENTENCE_1.length +
+              words.slice(0, wordIndex).reduce((acc, w) => acc + w.length + 1, 0);
+            return (
+              <span
+                key={`s2-w-${wordIndex}`}
+                style={{ display: "inline-block", whiteSpace: "nowrap" }}
+              >
+                {word.split("").map((char, charIndex) => (
+                  <span
+                    key={`s2-${startIdx + charIndex}`}
+                    ref={(el) => {
+                      if (el) letterRefs.current[startIdx + charIndex] = el;
+                    }}
+                    style={{ display: "inline-block", opacity: 0 }}
+                  >
+                    {char}
+                  </span>
+                ))}
+                {wordIndex < words.length - 1 && (
+                  <span
+                    ref={(el) => {
+                      if (el) letterRefs.current[startIdx + word.length] = el;
+                    }}
+                    style={{ display: "inline-block", width: "0.3em" }}
+                  >
+                    &nbsp;
+                  </span>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>

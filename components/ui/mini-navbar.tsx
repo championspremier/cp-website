@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { label: "Programs", href: "#" },
   { label: "Blog", href: "#" },
   { label: "Contact", href: "#" },
-  { label: "Shop", href: "#" },
+  { label: "Shop", target: "_blank", href: "https://championspremier.myshopify.com/"},
   { label: "Sponsors", href: "#" },
 ];
 
@@ -85,7 +85,8 @@ export function Navbar() {
 
         {/* CTA button */}
         <Link
-          href="#"
+          target="_blank"
+          href="https://championspremier.pushpress.com/landing/plans/plan_0j80vu490n01mu/login"
           className="hidden md:inline-block px-4 py-2 rounded-full font-semibold text-white text-sm transition-opacity hover:opacity-90 whitespace-nowrap"
           style={{
             background:

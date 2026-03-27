@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .left-4 {
+    left: 0rem;
+  }
+}
+
 html {
   overflow-y: scroll;
   scrollbar-width: none;
@@ -45,8 +51,17 @@ html::-webkit-scrollbar {
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-inter), sans-serif;
   overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-inter), sans-serif;
+  font-weight: 700;
+}
+
+p, span, a, li, label, input, textarea, button {
+  font-family: var(--font-inter), sans-serif;
 }
 
 @keyframes gradientMove {
@@ -55,5 +70,40 @@ body {
   }
   100% {
     background-position: 200%;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@layer base {
+  .theme {
+    --animate-marquee: marquee var(--duration) infinite linear;
+    --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  }
+}
+
+@theme inline {
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
   }
 }

@@ -1,14 +1,16 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import IntroVideo from "@/components/IntroVideo";
 import { Navbar } from "@/components/ui/mini-navbar";
 import HeroSection from "@/components/HeroSection";
 import VideoScrollSection from "@/components/VideoScrollSection";
-import MissionContentSection from "@/components/MissionContentSection";
+import PlayerMarquee from "@/components/PlayerMarquee";
+import EvaluationTimeline from "@/components/EvaluationTimeline";
+import LocationsSection from "@/components/LocationsSection";
 
-const PlayerSection3D = dynamic(() => import("@/components/PlayerSection3D"), {
+const MissionSection = dynamic(() => import("@/components/MissionSection"), {
   ssr: false,
 });
 
@@ -23,11 +25,11 @@ export default function Home() {
     <main>
       <Navbar />
       <HeroSection />
-      <div style={{ marginTop: "-80px", position: "relative", zIndex: 2 }}>
-        <VideoScrollSection />
-      </div>
-      <PlayerSection3D />
-      <MissionContentSection />
+      <VideoScrollSection />
+      <PlayerMarquee />
+      <MissionSection />
+      <EvaluationTimeline />
+      <LocationsSection />
     </main>
   );
 }

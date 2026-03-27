@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TextEffect } from "@/components/ui/text-effect";
 
 const PLAYERS = [
@@ -25,52 +26,38 @@ const STATS = [
 export default function HeroSection() {
   const [currentPlayer, setCurrentPlayer] = useState(0);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const leftContentRef = useRef<HTMLDivElement>(null);
   const isTransitioning = useRef(false);
 
-  // Set initial state for all images
-  useEffect(() => {
-    PLAYERS.forEach((_, index) => {
-      const el = imageRefs.current[index];
-      if (el) {
-        gsap.set(el, {
-          rotationY: 0,
-          opacity: index === 0 ? 1 : 0,
-          zIndex: index === 0 ? 2 : 1,
-        });
-      }
-    });
-  }, []);
+  const playerAreaRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLDivElement>(null);
+  const bottomLeftRef = useRef<HTMLDivElement>(null);
+  const bottomRightRef = useRef<HTMLDivElement>(null);
+  const programsLabelRef = useRef<HTMLDivElement>(null);
+  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+  const positionNameRef = useRef<HTMLSpanElement>(null);
+  const statNumberRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
-  const goToPlayer = useCallback(
-    (index: number, direction: "prev" | "next") => {
-      const nextIndex = ((index % 4) + 4) % 4;
+  const transitionToPlayer = useCallback(
+    (nextIndex: number, direction: "prev" | "next") => {
       if (nextIndex === currentPlayer || isTransitioning.current) return;
 
       const currentEl = imageRefs.current[currentPlayer];
       const nextEl = imageRefs.current[nextIndex];
-      const leftEl = leftContentRef.current;
 
       if (currentEl && nextEl) {
         isTransitioning.current = true;
 
-        // Slide in left content: from left when going right, from right when going left
-        const fromX = direction === "next" ? -100 : 100;
-        if (leftEl) {
-          gsap.set(leftEl, { x: fromX, opacity: 0 });
-          gsap.to(leftEl, {
-            x: 0,
-            opacity: 1,
-            duration: 0.4,
-            ease: "power2.out",
-          });
-        }
+        // Animate position name out (fade + slide up)
+        gsap.to(positionNameRef.current, {
+          y: -10,
+          opacity: 0,
+          duration: 0.3,
+        });
 
-        gsap.set(nextEl, { rotationY: -90, opacity: 0, zIndex: 3 });
+        gsap.set(nextEl, { rotationY: direction === "next" ? -90 : 90, opacity: 0, zIndex: 3 });
 
-        // Animate current out
         gsap.to(currentEl, {
-          rotationY: 90,
+          rotationY: direction === "next" ? 90 : -90,
           opacity: 0,
           duration: 0.3,
           ease: "power2.in",
@@ -87,6 +74,18 @@ export default function HeroSection() {
                 isTransitioning.current = false;
               },
             });
+            // Update position text and animate in (fade + slide down from above)
+            const posEl = positionNameRef.current;
+            if (posEl) {
+              posEl.textContent = PLAYERS[nextIndex].position.toUpperCase();
+              gsap.set(posEl, { y: 10, opacity: 0 });
+              gsap.to(posEl, {
+                y: 0,
+                opacity: 1,
+                duration: 0.4,
+                ease: "power2.out",
+              });
+            }
           },
         });
       } else {
@@ -96,177 +95,317 @@ export default function HeroSection() {
     [currentPlayer]
   );
 
-  const handlePrev = () => {
-    goToPlayer(currentPlayer - 1, "prev");
-  };
+  useEffect(() => {
+    PLAYERS.forEach((_, index) => {
+      const el = imageRefs.current[index];
+      if (el) {
+        gsap.set(el, {
+          rotationY: 0,
+          opacity: index === 0 ? 1 : 0,
+          zIndex: index === 0 ? 2 : 1,
+        });
+      }
+    });
+  }, []);
 
-  const handleNext = () => {
-    goToPlayer(currentPlayer + 1, "next");
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextIndex = (currentPlayer + 1) % PLAYERS.length;
+      transitionToPlayer(nextIndex, "next");
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [currentPlayer, transitionToPlayer]);
 
-  const handleDotClick = (index: number) => {
-    const direction = index > currentPlayer ? "next" : "prev";
-    goToPlayer(index, direction);
-  };
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      gsap.set(playerAreaRef.current, { opacity: 0, scale: 0.95 });
+      gsap.set(headlineRef.current, { opacity: 0 });
+      gsap.set(bottomLeftRef.current, { opacity: 0, x: -60 });
+      gsap.set(bottomRightRef.current, { opacity: 0, x: 60 });
+      gsap.set(programsLabelRef.current, { opacity: 0, y: -20 });
+      gsap.set(scrollIndicatorRef.current, { opacity: 0, y: -20 });
+
+      gsap.to(playerAreaRef.current, {
+        opacity: 1,
+        scale: 1,
+        duration: 1.2,
+        ease: "power2.out",
+        delay: 0,
+      });
+      gsap.to(headlineRef.current, {
+        opacity: 1,
+        duration: 1,
+        ease: "power2.out",
+        delay: 0.3,
+      });
+      gsap.to(bottomLeftRef.current, {
+        opacity: 1,
+        x: 0,
+        duration: 0.8,
+        ease: "power2.out",
+        delay: 0.5,
+      });
+      gsap.to(bottomRightRef.current, {
+        opacity: 1,
+        x: 0,
+        duration: 0.8,
+        ease: "power2.out",
+        delay: 0.5,
+      });
+      gsap.to(programsLabelRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: "power2.out",
+        delay: 0.7,
+      });
+      gsap.to(scrollIndicatorRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: "power2.out",
+        delay: 0.7,
+      });
+
+      // Count-up animations — start after stats div has faded in (~1.4s)
+      [statNumberRefs.current[0], statNumberRefs.current[1], statNumberRefs.current[2]].forEach((el, i) => {
+        if (el) {
+          el.textContent = i === 0 ? "0%" : "0+";
+          gsap.set(el, { color: "#3b82f6" });
+        }
+      });
+
+      const stat0 = { value: 0 };
+      gsap.to(stat0, {
+        value: 30,
+        duration: 1.5,
+        ease: "power2.out",
+        snap: { value: 1 },
+        delay: 1.4,
+        onUpdate: () => {
+          const el = statNumberRefs.current[0];
+          if (el) el.textContent = `20-${Math.round(stat0.value)}%`;
+        },
+        onComplete: () => {
+          const el = statNumberRefs.current[0];
+          if (el) {
+            el.textContent = "20-30%";
+            gsap.to(el, { color: "var(--text)", duration: 0.3 });
+          }
+        },
+      });
+
+      const stat1 = { value: 0 };
+      gsap.to(stat1, {
+        value: 35,
+        duration: 1.2,
+        ease: "power2.out",
+        snap: { value: 1 },
+        delay: 1.4,
+        onUpdate: () => {
+          const el = statNumberRefs.current[1];
+          if (el) el.textContent = `${Math.round(stat1.value)}+`;
+        },
+        onComplete: () => {
+          const el = statNumberRefs.current[1];
+          if (el) {
+            el.textContent = "35+";
+            gsap.to(el, { color: "var(--text)", duration: 0.3 });
+          }
+        },
+      });
+
+      const stat2 = { value: 0 };
+      gsap.to(stat2, {
+        value: 200,
+        duration: 2,
+        ease: "power2.out",
+        snap: { value: 1 },
+        delay: 1.4,
+        onUpdate: () => {
+          const el = statNumberRefs.current[2];
+          if (el) el.textContent = `${Math.round(stat2.value)}+`;
+        },
+        onComplete: () => {
+          const el = statNumberRefs.current[2];
+          if (el) {
+            el.textContent = "200+";
+            gsap.to(el, { color: "var(--text)", duration: 0.3 });
+          }
+        },
+      });
+
+      ScrollTrigger.create({
+        trigger: scrollIndicatorRef.current,
+        start: "top 90%",
+        end: "top 60%",
+        scrub: true,
+        onUpdate: (self) => {
+          if (scrollIndicatorRef.current) {
+            scrollIndicatorRef.current.style.opacity = String(1 - self.progress);
+          }
+        },
+      });
+    });
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
-      className="min-h-screen overflow-hidden pt-[80px] px-6 md:px-12 lg:px-16 pb-8"
-      style={{
-        background: "var(--bg)",
-        opacity: 1,
-      }}
+      className="relative min-h-screen overflow-hidden md:overflow-visible flex flex-col items-center justify-center gap-8 pt-[100px] px-6 pb-10 md:flex-none md:pt-[80px] md:px-0 md:pb-0"
+      style={{ background: "var(--bg)" }}
     >
-      <div className="max-w-[1400px] mx-auto w-full flex flex-col md:flex-row">
-        {/* Left side - text content */}
-        <div
-          ref={leftContentRef}
-          className="flex-1 flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 md:py-0"
+      {/* Large headline text — BEHIND the player */}
+      <div
+        ref={headlineRef}
+        className="absolute inset-0 hidden md:flex flex-col items-center justify-center pointer-events-none z-[1]"
+      >
+        <h1
+          className="text-center font-black uppercase text-[clamp(3rem,10vw,5rem)] md:text-[clamp(6rem,12vw,14rem)]"
+          style={{ lineHeight: 1.1 }}
         >
-        <div className="max-w-xl">
-          {/* Headline */}
-          <h1 className="font-black text-6xl md:text-7xl leading-tight mb-6">
-            <span style={{ color: "var(--text)" }}>DICTATE YOUR</span>
-            <br />
-            <span className="gradient-text">
-              <TextEffect
-                words={["Development", "Training", "Potential", "Longevity"]}
-                effect="flip"
-                duration={3000}
-                textClassName="gradient-text"
-              />
-            </span>
-          </h1>
-
-          {/* Subtitle */}
-          <p
-            className="text-lg mb-8 max-w-md"
-            style={{ color: "var(--muted)" }}
+          <span
+            style={{
+              color: "var(--text)",
+              opacity: 0.08,
+            }}
           >
-            For top players in the DMV area entering the 11v11 phase (U13-U19) of their footballing journey.
-          </p>
-
-          {/* CTA button */}
-          <Link
-            href="#"
-            className="inline-block px-8 py-4 rounded-lg font-semibold text-white mb-12 transition-opacity hover:opacity-90"
-            style={{ background: GRADIENT }}
+            DICTATE YOUR
+          </span>
+          <br />
+          <span
+            className="gradient-text"
+            style={{ opacity: 0.15 }}
           >
-            FREE EVALUATION
-          </Link>
-
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-6 md:gap-8 justify-center">
-            {STATS.map((stat, index) => (
-              <div
-                key={stat.label}
-                className={`flex flex-col ${index > 0 ? "pl-6 md:pl-8 border-l border-[var(--border)]" : ""}`}
-              >
-                <span
-                  className="text-2xl font-bold"  
-                  style={{ color: "var(--text)" }}
-                >
-                  {stat.number}
-                </span>
-                <span
-                  className="text-sm"
-                  style={{ color: "var(--muted)" }}
-                >
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-        </div>
-
-        {/* Right side - player carousel */}
-        <div className="flex-1 relative min-h-[400px] md:min-h-0 md:h-[calc(100vh-80px)]">
-        <div className="absolute inset-0 flex items-end justify-center">
-          {/* Player images container */}
-          <div
-            className="relative w-full h-full max-h-[500px] md:max-h-none"
-            style={{ perspective: 1000 }}
-          >
-            {PLAYERS.map((player, index) => (
-              <div
-                key={player.src}
-                ref={(el) => {
-                  imageRefs.current[index] = el;
-                }}
-                className="absolute inset-0"
-                style={{
-                  transformStyle: "preserve-3d",
-                  backfaceVisibility: "hidden",
-                }}
-              >
-                <Image
-                  src={player.src}
-                  alt={player.position}
-                  fill
-                  className="object-contain object-bottom"
-                  style={{
-                    filter: "drop-shadow(0px 20px 40px rgba(0,0,0,0.15))",
-                  }}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority={index === 0}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Carousel labels - top left and top right */}
-        <span
-          className="absolute top-4 left-4 text-sm z-10"
-          style={{ color: "var(--muted)" }}
-        >
-          Our programs are for...
-        </span>
-        <span
-          className="absolute top-4 right-4 text-sm font-medium z-10"
-          style={{ color: "var(--text)" }}
-        >
-          {PLAYERS[currentPlayer].position}
-        </span>
-
-        {/* Arrow buttons */}
-        <button
-          type="button"
-          onClick={handlePrev}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-light transition-opacity hover:opacity-90 z-10"
-          style={{ background: GRADIENT }}
-          aria-label="Previous player"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={handleNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl font-light transition-opacity hover:opacity-90 z-10"
-          style={{ background: GRADIENT }}
-          aria-label="Next player"
-        >
-          ›
-        </button>
-
-        {/* Dot indicators */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-          {PLAYERS.map((_, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => handleDotClick(index)}
-              className="w-2.5 h-2.5 rounded-full transition-all"
-              style={{
-                background:
-                  index === currentPlayer ? GRADIENT : "var(--border)",
-              }}
-              aria-label={`Go to ${PLAYERS[index].position}`}
+            <TextEffect
+              words={["Development", "Training", "Potential", "Longevity"]}
+              effect="flip"
+              duration={3000}
+              textClassName="gradient-text"
             />
+          </span>
+        </h1>
+      </div>
+
+      {/* "Our programs are for..." label — first in mobile flex flow */}
+      <div
+        ref={programsLabelRef}
+        className="relative text-sm z-[3] w-full text-center md:absolute md:top-[100px] md:left-[6%] md:w-auto md:text-left flex flex-col"
+      >
+        <span style={{ color: "var(--muted)" }}>Our programs are for...</span>
+        <span
+          ref={positionNameRef}
+          className="gradient-text text-2xl md:text-3xl font-black uppercase mt-1"
+        >
+          {PLAYERS[currentPlayer].position.toUpperCase()}
+        </span>
+      </div>
+
+      {/* Scroll to explore indicator — top-right on desktop, centered on mobile */}
+      <div
+        ref={scrollIndicatorRef}
+        className="relative z-[3] w-full text-center flex flex-col items-center md:absolute md:bottom-[2%] md:left-1/2 md:-translate-x-1/2 md:w-auto"
+      >
+        <span className="text-sm" style={{ color: "var(--muted)" }}>
+          Scroll to explore
+        </span>
+        <span
+          className="gradient-text text-2xl md:text-3xl font-black mt-1"
+          style={{ animation: "bounce 2s ease-in-out infinite" }}
+        >
+          ↓
+        </span>
+      </div>
+
+      {/* Player images — CENTER, in front of text */}
+      <div
+        ref={playerAreaRef}
+        className="relative w-[70vw] h-[50vh] flex items-end justify-center z-[2] md:absolute md:inset-0 md:w-auto md:h-auto md:flex md:items-end md:justify-center"
+        style={{ perspective: 1000 }}
+      >
+        <div
+          className="relative w-full h-full md:max-h-[75vh] md:h-[75vh]"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {PLAYERS.map((player, index) => (
+            <div
+              key={player.src}
+              ref={(el) => {
+                imageRefs.current[index] = el;
+              }}
+              className="absolute inset-0"
+              style={{
+                transformStyle: "preserve-3d",
+                backfaceVisibility: "hidden",
+              }}
+            >
+              <Image
+                src={player.src}
+                alt={player.position}
+                fill
+                className="object-contain object-bottom"
+                style={{
+                  filter: "drop-shadow(0px 20px 40px rgba(0,0,0,0.15))",
+                }}
+                sizes="(max-width: 768px) 70vw, 50vw"
+                priority={index === 0}
+              />
+            </div>
           ))}
         </div>
-        </div>
+      </div>
+
+      {/* Bottom-left: subtitle + CTA */}
+      <div
+        ref={bottomLeftRef}
+        className="relative z-[3] w-full max-w-[350px] text-center md:absolute md:bottom-[8%] md:left-[6%] md:text-left md:max-w-[350px]"
+      >
+        <p
+          className="text-lg mb-6"
+          style={{ color: "var(--muted)" }}
+        >
+          Trial only training program in the DMV area for footballers entering the 11v11 phase (U12-U18).
+        </p>
+        <Link
+          target="_blank"
+          href="https://championspremier.pushpress.com/landing/plans/plan_0j80vu490n01mu/login"
+          className="inline-block px-8 py-4 rounded-lg font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: GRADIENT }}
+        >
+          FREE EVALUATION
+        </Link>
+      </div>
+
+      {/* Bottom-right: stats row */}
+      <div
+        ref={bottomRightRef}
+        className="relative flex gap-6 md:gap-8 z-[3] justify-center md:absolute md:bottom-[8%] md:right-[6%]"
+      >
+        {STATS.map((stat, index) => (
+          <div
+            key={stat.label}
+            className={`flex flex-col ${index > 0 ? "pl-6 md:pl-8 border-l border-[var(--border)]" : ""}`}
+          >
+            <span
+              ref={(el) => {
+                if (el) statNumberRefs.current[index] = el;
+              }}
+              className="text-2xl font-bold"
+              style={{ color: "#3b82f6" }}
+            >
+              {index === 0 ? "0%" : "0+"}
+            </span>
+            <span
+              className="text-sm"
+              style={{ color: "var(--muted)" }}
+            >
+              {stat.label}
+            </span>
+          </div>
+        ))}
       </div>
     </section>
   );
