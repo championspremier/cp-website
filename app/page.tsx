@@ -10,6 +10,8 @@ import PlayerMarquee from "@/components/PlayerMarquee";
 import EvaluationTimeline from "@/components/EvaluationTimeline";
 import LocationsSection from "@/components/LocationsSection";
 import CoachesSection from "@/components/CoachesSection";
+import PlayerScanSection from "@/components/PlayerScanSection";
+import Footer from "@/components/Footer";
 
 const MissionSection = dynamic(() => import("@/components/MissionSection"), {
   ssr: false,
@@ -32,6 +34,8 @@ export default function Home() {
       <EvaluationTimeline />
       <LocationsSection />
       <CoachesSection />
+      <PlayerScanSection />
+      <Footer />
     </main>
   );
 }

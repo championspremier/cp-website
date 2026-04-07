@@ -101,6 +101,16 @@ export default function MissionSection() {
               el.style.transform = `scale(${isActive ? 1.2 : 1})`;
             });
 
+            // Also update mobile number indicators
+            const mobileNumbers = document.querySelectorAll("[data-mobile-number]");
+            mobileNumbers.forEach((el, i) => {
+              const htmlEl = el as HTMLElement;
+              const isActive = i === segmentIndex;
+              htmlEl.style.opacity = isActive ? "1" : "0.2";
+              htmlEl.style.color = isActive ? "var(--text)" : "var(--muted)";
+              htmlEl.style.transform = `scale(${isActive ? 1.2 : 1})`;
+            });
+
             // Content rows — zoom from right animation (no exit animation; only active visible)
             contentRowRefs.current.forEach((row, i) => {
               if (!row) return;
@@ -171,7 +181,7 @@ export default function MissionSection() {
       >
         {/* Left — 3D Player */}
         <div
-          className="w-full h-[40vh] md:h-auto md:w-[45%] relative"
+          className="w-full h-[30vh] md:h-auto md:w-[45%] relative"
           style={{
             padding: "20px",
           }}
@@ -188,6 +198,31 @@ export default function MissionSection() {
             <Player />
           </Suspense>
         </Canvas>
+      </div>
+
+      {/* Mobile number indicators — horizontal row */}
+      <div
+        className="flex md:hidden justify-center items-center w-full"
+        style={{
+          gap: "20px",
+          padding: "8px 0",
+        }}
+      >
+        {items.map((item, i) => (
+          <span
+            key={`mobile-${item.n}`}
+            data-mobile-number={i}
+            style={{
+              fontSize: "1rem",
+              fontWeight: 700,
+              opacity: 0.2,
+              color: "var(--muted)",
+              transition: "opacity 0.3s, color 0.3s, transform 0.3s",
+            }}
+          >
+            {item.n}
+          </span>
+        ))}
       </div>
 
       {/* Center — Number indicators */}
@@ -219,7 +254,7 @@ export default function MissionSection() {
 
         {/* Right — Mission content */}
         <div
-          className="w-full md:w-[45%] h-[60vh] md:h-full relative overflow-hidden flex flex-col justify-center"
+          className="w-full md:w-[45%] h-[70vh] md:h-full relative overflow-hidden flex flex-col justify-center"
           style={{
             padding: "0 4%",
           }}
@@ -239,7 +274,7 @@ export default function MissionSection() {
               display: "flex",
               flexDirection: "column",
               justifyContent: "flex-start",
-              padding: "15vh 6% 5vh",
+              padding: "8vh 6% 3vh",
               opacity: 0,
               transform: "translateX(200px) scale(1.1)",
             }}
@@ -269,7 +304,7 @@ export default function MissionSection() {
               style={{
                 width: "100%",
                 maxWidth: 500,
-                height: "40vh",
+                height: "clamp(25vh, 35vh, 40vh)",
                 maxHeight: "40vh",
                 borderRadius: 16,
                 overflow: "hidden",

@@ -25,6 +25,7 @@ const STATS = [
 
 export default function HeroSection() {
   const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [scrollIndicatorMobileTransformNone, setScrollIndicatorMobileTransformNone] = useState(false);
   const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isTransitioning = useRef(false);
 
@@ -94,6 +95,14 @@ export default function HeroSection() {
     },
     [currentPlayer]
   );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setScrollIndicatorMobileTransformNone(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     PLAYERS.forEach((_, index) => {
@@ -255,7 +264,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative min-h-screen overflow-hidden md:overflow-visible flex flex-col items-center justify-center gap-8 pt-[100px] px-6 pb-10 md:flex-none md:pt-[80px] md:px-0 md:pb-0"
+      className="relative min-h-screen overflow-hidden md:overflow-visible flex flex-col items-center justify-center gap-4 pt-[80px] px-6 pb-6 md:flex-none md:gap-8 md:pt-[80px] md:px-0 md:pb-0"
       style={{ background: "var(--bg)" }}
     >
       {/* Large headline text — BEHIND the player */}
@@ -304,26 +313,10 @@ export default function HeroSection() {
         </span>
       </div>
 
-      {/* Scroll to explore indicator — top-right on desktop, centered on mobile */}
-      <div
-        ref={scrollIndicatorRef}
-        className="relative z-[3] w-full text-center flex flex-col items-center md:absolute md:bottom-[2%] md:left-1/2 md:-translate-x-1/2 md:w-auto"
-      >
-        <span className="text-sm" style={{ color: "var(--muted)" }}>
-          Scroll to explore
-        </span>
-        <span
-          className="gradient-text text-2xl md:text-3xl font-black mt-1"
-          style={{ animation: "bounce 2s ease-in-out infinite" }}
-        >
-          ↓
-        </span>
-      </div>
-
       {/* Player images — CENTER, in front of text */}
       <div
         ref={playerAreaRef}
-        className="relative w-[70vw] h-[50vh] flex items-end justify-center z-[2] md:absolute md:inset-0 md:w-auto md:h-auto md:flex md:items-end md:justify-center"
+        className="relative w-[60vw] h-[35vh] flex items-end justify-center z-[2] md:absolute md:inset-0 md:w-auto md:h-auto md:flex md:items-end md:justify-center"
         style={{ perspective: 1000 }}
       >
         <div
@@ -350,7 +343,7 @@ export default function HeroSection() {
                 style={{
                   filter: "drop-shadow(0px 20px 40px rgba(0,0,0,0.15))",
                 }}
-                sizes="(max-width: 768px) 70vw, 50vw"
+                sizes="(max-width: 768px) 60vw, 50vw"
                 priority={index === 0}
               />
             </div>
@@ -364,7 +357,7 @@ export default function HeroSection() {
         className="relative z-[3] w-full max-w-[350px] text-center md:absolute md:bottom-[8%] md:left-[6%] md:text-left md:max-w-[350px]"
       >
         <p
-          className="text-lg mb-6"
+          className="text-base md:text-lg mb-4 md:mb-6"
           style={{ color: "var(--muted)" }}
         >
           Trial only training program in the DMV area for footballers entering the 11v11 phase (U12-U18).
@@ -406,6 +399,25 @@ export default function HeroSection() {
             </span>
           </div>
         ))}
+      </div>
+
+      {/* Scroll to explore — end of mobile flex flow; absolutely positioned on desktop */}
+      <div
+        ref={scrollIndicatorRef}
+        className="relative z-[3] w-full flex justify-center md:absolute md:bottom-[2%] md:left-1/2 md:-translate-x-1/2 md:w-auto"
+        style={scrollIndicatorMobileTransformNone ? { transform: "none" } : undefined}
+      >
+        <div className="text-center flex flex-col items-center">
+          <span className="text-sm" style={{ color: "var(--muted)" }}>
+            Scroll to explore
+          </span>
+          <span
+            className="gradient-text text-2xl md:text-3xl font-black mt-1"
+            style={{ animation: "bounce 2s ease-in-out infinite" }}
+          >
+            ↓
+          </span>
+        </div>
       </div>
     </section>
   );

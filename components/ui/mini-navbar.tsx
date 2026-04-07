@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NAV_LINKS = [
+const NAV_LINKS: { label: string; href: string; target?: string }[] = [
   { label: "Programs", href: "#" },
-  { label: "Blog", href: "#" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "#" },
-  { label: "Shop", target: "_blank", href: "https://championspremier.myshopify.com/"},
+  { label: "Shop", target: "_blank", href: "https://championspremier.myshopify.com/" },
   { label: "Sponsors", href: "#" },
 ];
 
@@ -46,7 +46,7 @@ export function Navbar() {
         className="relative justify-between"
       >
         {/* Logo */}
-        <Link href="#" className="flex items-center shrink-0">
+        <Link href="/" className="flex items-center shrink-0">
           <Image
             src="/logos/Full White logo.png"
             alt="Champions Premier"
@@ -60,7 +60,13 @@ export function Navbar() {
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-4">
           {NAV_LINKS.map((link) => (
-            <Link key={link.label} href={link.href}>
+            <Link
+              key={link.label}
+              href={link.href}
+              {...(link.target
+                ? { target: link.target, rel: "noopener noreferrer" as const }
+                : {})}
+            >
               <motion.div
                 className="relative block cursor-pointer"
                 style={{
@@ -146,6 +152,9 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   href={link.href}
+                  {...(link.target
+                    ? { target: link.target, rel: "noopener noreferrer" as const }
+                    : {})}
                   className="text-sm font-medium text-white/90 py-3 px-4 rounded-lg hover:bg-white/10 transition-colors"
                   onClick={() => setMenuOpen(false)}
                 >
