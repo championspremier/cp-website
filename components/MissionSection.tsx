@@ -60,8 +60,6 @@ export default function MissionSection() {
     const section = sectionRef.current;
     if (!section) return;
 
-    let timer1: ReturnType<typeof setTimeout> | undefined;
-    let timer2: ReturnType<typeof setTimeout> | undefined;
     let loadRefreshTimer: ReturnType<typeof setTimeout> | undefined;
 
     const handleLoad = () => {
@@ -73,89 +71,79 @@ export default function MissionSection() {
     window.addEventListener("load", handleLoad);
 
     const ctx = gsap.context(() => {
-      timer1 = setTimeout(() => {
-        ScrollTrigger.refresh();
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "+=400vh",
+        pin: true,
+        pinSpacing: true,
+        scrub: 1,
+        refreshPriority: -1,
+        onUpdate: (self) => {
+          const p = self.progress;
 
-        ScrollTrigger.create({
-          trigger: section,
-          start: "top top",
-          end: "+=400vh",
-          pin: true,
-          pinSpacing: true,
-          scrub: 1,
-          refreshPriority: -1,
-          onUpdate: (self) => {
-            const p = self.progress;
+          // Determine active segment (0-3)
+          const rawSegment = p * 4;
+          const segmentIndex = Math.min(3, Math.floor(rawSegment));
+          const segmentProgress = rawSegment >= 4 ? 1 : rawSegment % 1;
 
-            // Determine active segment (0-3)
-            const rawSegment = p * 4;
-            const segmentIndex = Math.min(3, Math.floor(rawSegment));
-            const segmentProgress = rawSegment >= 4 ? 1 : rawSegment % 1;
+          // Number indicators — direct style
+          numberRefs.current.forEach((el, i) => {
+            if (!el) return;
+            const isActive = i === segmentIndex;
+            el.style.opacity = isActive ? "1" : "0.2";
+            el.style.color = isActive ? "var(--text)" : "var(--muted)";
+            el.style.transform = `scale(${isActive ? 1.2 : 1})`;
+          });
 
-            // Number indicators — direct style
-            numberRefs.current.forEach((el, i) => {
-              if (!el) return;
-              const isActive = i === segmentIndex;
-              el.style.opacity = isActive ? "1" : "0.2";
-              el.style.color = isActive ? "var(--text)" : "var(--muted)";
-              el.style.transform = `scale(${isActive ? 1.2 : 1})`;
-            });
+          // Also update mobile number indicators
+          const mobileNumbers = document.querySelectorAll("[data-mobile-number]");
+          mobileNumbers.forEach((el, i) => {
+            const htmlEl = el as HTMLElement;
+            const isActive = i === segmentIndex;
+            htmlEl.style.opacity = isActive ? "1" : "0.2";
+            htmlEl.style.color = isActive ? "var(--text)" : "var(--muted)";
+            htmlEl.style.transform = `scale(${isActive ? 1.2 : 1})`;
+          });
 
-            // Also update mobile number indicators
-            const mobileNumbers = document.querySelectorAll("[data-mobile-number]");
-            mobileNumbers.forEach((el, i) => {
-              const htmlEl = el as HTMLElement;
-              const isActive = i === segmentIndex;
-              htmlEl.style.opacity = isActive ? "1" : "0.2";
-              htmlEl.style.color = isActive ? "var(--text)" : "var(--muted)";
-              htmlEl.style.transform = `scale(${isActive ? 1.2 : 1})`;
-            });
+          // Content rows — zoom from right animation (no exit animation; only active visible)
+          contentRowRefs.current.forEach((row, i) => {
+            if (!row) return;
 
-            // Content rows — zoom from right animation (no exit animation; only active visible)
-            contentRowRefs.current.forEach((row, i) => {
-              if (!row) return;
+            const isActiveSegment = i === segmentIndex;
+            const isPastSegment = i < segmentIndex;
 
-              const isActiveSegment = i === segmentIndex;
-              const isPastSegment = i < segmentIndex;
+            let opacity = 0;
+            let x = 200;
+            let scale = 1.1;
 
-              let opacity = 0;
-              let x = 200;
-              let scale = 1.1;
-
-              if (isActiveSegment) {
-                if (segmentProgress < 0.3) {
-                  // Enter
-                  const t = segmentProgress / 0.3;
-                  opacity = t;
-                  x = 200 - 200 * t;
-                  scale = 1.1 - 0.1 * t;
-                } else {
-                  // Hold (no exit; previous item hides instantly when segment changes)
-                  opacity = 1;
-                  x = 0;
-                  scale = 1;
-                }
-              } else if (isPastSegment) {
-                opacity = 0;
-                x = -100;
-                scale = 0.95;
+            if (isActiveSegment) {
+              if (segmentProgress < 0.3) {
+                // Enter
+                const t = segmentProgress / 0.3;
+                opacity = t;
+                x = 200 - 200 * t;
+                scale = 1.1 - 0.1 * t;
+              } else {
+                // Hold (no exit; previous item hides instantly when segment changes)
+                opacity = 1;
+                x = 0;
+                scale = 1;
               }
+            } else if (isPastSegment) {
+              opacity = 0;
+              x = -100;
+              scale = 0.95;
+            }
 
-              row.style.opacity = String(opacity);
-              row.style.transform = `translateX(${x}px) scale(${scale})`;
-            });
-          },
-        });
-      }, 1500);
-
-      timer2 = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 3000);
+            row.style.opacity = String(opacity);
+            row.style.transform = `translateX(${x}px) scale(${scale})`;
+          });
+        },
+      });
     }, section);
 
     return () => {
-      if (timer1 !== undefined) clearTimeout(timer1);
-      if (timer2 !== undefined) clearTimeout(timer2);
       if (loadRefreshTimer !== undefined) clearTimeout(loadRefreshTimer);
       window.removeEventListener("load", handleLoad);
       ctx.revert();

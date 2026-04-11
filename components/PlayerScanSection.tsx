@@ -60,8 +60,6 @@ export default function PlayerScanSection() {
     const video = videoRef.current;
     if (!wrapper || !video) return;
 
-    let timer1: ReturnType<typeof setTimeout> | undefined;
-    let timer2: ReturnType<typeof setTimeout> | undefined;
     let loadRefreshTimer: ReturnType<typeof setTimeout> | undefined;
     let onLoaded: (() => void) | undefined;
 
@@ -172,19 +170,9 @@ export default function PlayerScanSection() {
       } else {
         video.addEventListener("loadedmetadata", onLoaded, { once: true });
       }
-
-      timer1 = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 1500);
-
-      timer2 = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 3000);
     }, wrapper);
 
     return () => {
-      if (timer1 !== undefined) clearTimeout(timer1);
-      if (timer2 !== undefined) clearTimeout(timer2);
       if (loadRefreshTimer !== undefined) clearTimeout(loadRefreshTimer);
       window.removeEventListener("load", handleLoad);
       if (onLoaded) {
