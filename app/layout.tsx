@@ -71,6 +71,7 @@ const localBusinessJsonLd = {
   description:
     "Elite soccer training program in Falls Church, VA for players entering the 11v11 phase (U12-U18).",
   url: "https://www.championspremier.net",
+  image: "https://www.championspremier.net/og-image.png",
   telephone: "+1-571-240-4047",
   email: "support@championspremier.net",
   address: {
@@ -117,6 +118,7 @@ const localBusinessJsonLd = {
     { "@type": "City", name: "Reston" },
   ],
   sport: "Soccer",
+  priceRange: "$$",
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "5.0",
