@@ -23,6 +23,7 @@ export type TeamBlockMember = {
   image: string;
   bio: string;
   instagram: string;
+  objectPosition?: string;
 };
 
 export interface TeamBlockProps {
@@ -129,6 +130,7 @@ export function TeamBlock({
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 20vw"
                   className="object-cover transition-transform duration-300 group-hover:scale-110"
+                  style={{ objectPosition: member.objectPosition || "center center" }}
                 />
                 <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                   <div className="translate-y-4 transform opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

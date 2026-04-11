@@ -5,16 +5,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NAV_LINKS: { label: string; href: string; target?: string }[] = [
-  { label: "Programs", href: "#" },
+type NavLink = {
+  label: string;
+  href: string;
+  target?: string;
+  children?: { label: string; href: string; target?: string }[];
+};
+
+const NAV_LINKS: NavLink[] = [
+  {
+    label: "Programs",
+    href: "/programs/champions-premier",
+    children: [
+      { label: "Champions Premier", href: "/programs/champions-premier" },
+      { label: "Homegrown", href: "https://homegrown-app.com", target: "_blank" },
+    ],
+  },
   { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "#" },
+  { label: "Contact", href: "/contact" },
   { label: "Shop", target: "_blank", href: "https://championspremier.myshopify.com/" },
-  { label: "Sponsors", href: "#" },
+  { label: "Sponsors", href: "/sponsors" },
 ];
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredDropdown, setHoveredDropdown] = useState<string | null>(null);
 
   return (
     <div
@@ -59,34 +74,84 @@ export function Navbar() {
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-4">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              {...(link.target
-                ? { target: link.target, rel: "noopener noreferrer" as const }
-                : {})}
-            >
-              <motion.div
-                className="relative block cursor-pointer"
-                style={{
-                  color: "rgba(255,255,255,0.9)",
-                  padding: "6px 16px",
-                  fontSize: "14px",
-                  borderRadius: "9999px",
-                }}
-                initial="rest"
-                whileHover="hover"
-                variants={{
-                  rest: { backgroundColor: "transparent" },
-                  hover: { backgroundColor: "rgba(255,255,255,0.1)", color: "var(--text)" },
-                }}
-                transition={{ duration: 0.2 }}
+          {NAV_LINKS.map((link) => {
+            const hasChildren = Boolean(link.children?.length);
+            return (
+              <div
+                key={link.label}
+                className="relative"
+                onMouseEnter={() => hasChildren && setHoveredDropdown(link.label)}
+                onMouseLeave={() => hasChildren && setHoveredDropdown(null)}
               >
-                {link.label}
-              </motion.div>
-            </Link>
-          ))}
+                <Link
+                  href={link.href}
+                  {...(link.target
+                    ? { target: link.target, rel: "noopener noreferrer" as const }
+                    : {})}
+                >
+                  <motion.div
+                    className="relative block cursor-pointer"
+                    style={{
+                      color: "rgba(255,255,255,0.9)",
+                      padding: "6px 16px",
+                      fontSize: "14px",
+                      borderRadius: "9999px",
+                    }}
+                    initial="rest"
+                    whileHover="hover"
+                    variants={{
+                      rest: { backgroundColor: "transparent" },
+                      hover: { backgroundColor: "rgba(255,255,255,0.1)", color: "var(--text)" },
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {link.label}
+                  </motion.div>
+                </Link>
+
+                <AnimatePresence>
+                  {hasChildren && hoveredDropdown === link.label && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute left-1/2 top-full -translate-x-1/2 pt-3"
+                      style={{ minWidth: "200px" }}
+                    >
+                      <div
+                        style={{
+                          background: "rgba(20,20,20,0.95)",
+                          backdropFilter: "blur(20px)",
+                          WebkitBackdropFilter: "blur(20px)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "14px",
+                          boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+                          padding: "8px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "2px",
+                        }}
+                      >
+                        {link.children?.map((child) => (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            {...(child.target
+                              ? { target: child.target, rel: "noopener noreferrer" as const }
+                              : {})}
+                            className="block px-4 py-2.5 text-sm font-medium text-white/90 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </div>
 
         {/* CTA button */}
@@ -149,17 +214,35 @@ export function Navbar() {
             >
             <div className="flex flex-col py-4 px-4">
               {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  {...(link.target
-                    ? { target: link.target, rel: "noopener noreferrer" as const }
-                    : {})}
-                  className="text-sm font-medium text-white/90 py-3 px-4 rounded-lg hover:bg-white/10 transition-colors"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                <div key={link.label} className="flex flex-col">
+                  <Link
+                    href={link.href}
+                    {...(link.target
+                      ? { target: link.target, rel: "noopener noreferrer" as const }
+                      : {})}
+                    className="text-sm font-medium text-white/90 py-3 px-4 rounded-lg hover:bg-white/10 transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                  {link.children && link.children.length > 0 && (
+                    <div className="flex flex-col ml-4 border-l border-white/10 pl-3 mb-2">
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href}
+                          {...(child.target
+                            ? { target: child.target, rel: "noopener noreferrer" as const }
+                            : {})}
+                          className="text-sm text-white/70 py-2 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
             </motion.div>

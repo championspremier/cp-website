@@ -8,6 +8,8 @@ const players = [
   { name: "Zayyan Ahmed", years: "3 Years", team: "Bangladesh National Team", image: "/players/zayyan.png" },
   { name: "Ameya Iyer", years: "4 Years", team: "Loudoun United FC", image: "/players/ameya.png" },
   { name: "Daniel Ramos", years: "2 Years", team: "Austin F.C.", image: "/players/ramos.png" },
+  { name: "Eamonn Hammond", years: "1.5 Years", team: "MLS Next Champion", image: "/players/eamonn.png" },
+  { name: "Jair Chavarria", years: "4 Years", team: "DC United", image: "/players/chava.png" },
 ];
 
 function PlayerCard({ player }: { player: (typeof players)[0] }) {

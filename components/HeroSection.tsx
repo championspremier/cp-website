@@ -8,8 +8,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TextEffect } from "@/components/ui/text-effect";
 
 const PLAYERS = [
-  { src: "/players/1.png", position: "Midfielders" },
-  { src: "/players/2.png", position: "Goalkeepers" },
+  { src: "/players/2.png", position: "Midfielders" },
+  { src: "/players/1.png", position: "Goalkeepers" },
   { src: "/players/3.png", position: "Forwards" },
   { src: "/players/4.png", position: "Defenders" },
 ];

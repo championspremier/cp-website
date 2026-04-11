@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -128,7 +129,7 @@ export default function Footer() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#111111]">Programs</h3>
               <nav className="flex flex-col gap-2">
-                <a href="#" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                <a href="/programs/champions-premier" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   Champions Premier
                 </a>
               </nav>
@@ -136,10 +137,13 @@ export default function Footer() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#111111]">About</h3>
               <nav className="flex flex-col gap-2">
-                <a href="#" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                <Link href="/about" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   About Us
-                </a>
-                <a href="#" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                </Link>
+                <Link href="/faq" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                  FAQ
+                </Link>
+                <a href="/contact" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   Contact Us
                 </a>
                 <a target="_blank" href="https://championspremier.pushpress.com/landing/plans/plan_0j80vu490n01mu/login" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
@@ -153,12 +157,12 @@ export default function Footer() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#111111]">Legal</h3>
               <nav className="flex flex-col gap-2">
-                <a href="#" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                <Link href="/privacy-policy" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   Privacy Policy
-                </a>
-                <a href="#" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                </Link>
+                <Link href="/terms-of-use" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   Terms of Use
-                </a>
+                </Link>
               </nav>
             </div>
             <div>
@@ -168,10 +172,26 @@ export default function Footer() {
               </p>
               <h3 className="mb-2 mt-6 text-sm font-semibold uppercase tracking-wider text-[#111111]">Locations</h3>
               <ul className="flex flex-col gap-1 text-sm text-[#6b7280]">
-                <li>Falls Church</li>
-                <li>Great Falls</li>
-                <li>Reston</li>
-                <li>Zoom</li>
+                <li>
+                  <Link href="/locations/falls-church" className="hover:text-[#111111] transition-colors">
+                    Falls Church
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/locations/great-falls" className="hover:text-[#111111] transition-colors">
+                    Great Falls
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/locations/greg-home-gym" className="hover:text-[#111111] transition-colors">
+                    Reston
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/locations/virtual" className="hover:text-[#111111] transition-colors">
+                    Zoom
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

@@ -1,6 +1,4 @@
-export const CONTENT_FILM_ANALYSIS = `## Film Analysis for Footballers: A Smarter Return-to-Play After Muscle Strain (Hamstring, Groin, Quad)
-
-Muscle strains are frustrating because you can *feel* close to 100% before the tissue is actually ready for full-speed football. Return-to-play is fastest when we rebuild capacity step-by-step, not when we rush the last step.
+export const CONTENT_FILM_ANALYSIS = `Muscle strains are frustrating because you can *feel* close to 100% before the tissue is actually ready for full-speed football. Return-to-play is fastest when we rebuild capacity step-by-step, not when we rush the last step.
 
 At Champions Premier, we also want athletes to return smarter, not just "returned." That is why we combine physical return-to-play with film analysis habits that improve decision-making under pressure. Our Virtual Program is built around one core idea: adopting a *third-person perspective* during analysis helps players make decisions that progress the game.
 
@@ -95,9 +93,7 @@ Return-to-play is a process, not a moment. If you do the basics well, build spri
 
 And if you want to level up while rehabbing, film analysis is one of the best "hidden advantages" available to athletes.`;
 
-export const CONTENT_STATS_VIRTUAL = `## Our Virtual Program: How Film Analysis Boosts Foundational Football IQ by 20–50%
-
-Most players don't struggle because they "can't play." They struggle because the game moves fast, pressure arrives faster, and decision-making gets rushed.
+export const CONTENT_STATS_VIRTUAL = `Most players don't struggle because they "can't play." They struggle because the game moves fast, pressure arrives faster, and decision-making gets rushed.
 
 That is exactly why we built the Champions Premier Virtual Program.
 
@@ -186,9 +182,7 @@ We are not collecting stats to look smart. We are building players who can:
 
 Better awareness leads to better decisions. Better decisions lead to better football.`;
 
-export const CONTENT_FITNESS = `## Fitness or Sprinting | Which is More Important for a Footballer?
-
-Let's get this straight: DISTANCE OF HIGH VELOCITY SPRINTS > DISTANCE OF RUNNING.
+export const CONTENT_FITNESS = `Let's get this straight: DISTANCE OF HIGH VELOCITY SPRINTS > DISTANCE OF RUNNING.
 
 Professional coaches expect their players to achieve the following statistics in a 90-minute game, regardless of their position:
 

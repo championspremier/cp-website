@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LocationCard } from "@/components/ui/location-card";
 
 const locations = [
@@ -8,6 +9,7 @@ const locations = [
     address: "300 Hillwood Ave, Falls Church, VA 22046",
     image: "/locations/falls-church.png",
     href: "https://maps.google.com/?q=300+Hillwood+Ave+Falls+Church+VA+22046",
+    internalHref: "/locations/falls-church",
     buttonLabel: "Directions",
   },
   {
@@ -15,6 +17,7 @@ const locations = [
     address: "2291 Dosinia Ct, Reston, VA",
     image: "/locations/greg-gym.png",
     href: "https://maps.google.com/?q=2291+Dosinia+Ct+Reston+VA",
+    internalHref: "/locations/greg-home-gym",
     buttonLabel: "Directions",
   },
   {
@@ -22,13 +25,15 @@ const locations = [
     address: "1400 Lake Fairfax Dr, Reston, VA 20190",
     image: "/locations/great-falls.png",
     href: "https://maps.google.com/?q=1400+Lake+Fairfax+Dr+Reston+VA+20190",
+    internalHref: "/locations/great-falls",
     buttonLabel: "Directions",
   },
   {
     name: "Zoom",
     address: "The Virtual Program",
     image: "/locations/zoom.png",
-    href: "#",
+    href: "/locations/virtual",
+    internalHref: "/locations/virtual",
     buttonLabel: "More Info",
   },
 ];
@@ -41,16 +46,25 @@ export default function LocationsSection() {
           {locations.map((loc) => (
             <div
               key={loc.name}
-              className="w-full md:w-[calc(25%-18px)] md:max-w-[280px] h-[440px]"
+              className="w-full md:w-[calc(25%-18px)] md:max-w-[280px] flex flex-col gap-2"
             >
-              <LocationCard
-                imageUrl={loc.image}
-                location={loc.name}
-                country={loc.address}
-                href={loc.href}
-                className="w-full max-w-none h-full"
-                buttonLabel={loc.buttonLabel}
-              />
+              <div className="h-[440px]">
+                <LocationCard
+                  imageUrl={loc.image}
+                  location={loc.name}
+                  country={loc.address}
+                  href={loc.href}
+                  className="w-full max-w-none h-full"
+                  buttonLabel={loc.buttonLabel}
+                />
+              </div>
+              <Link
+                href={loc.internalHref}
+                className="text-center text-sm font-semibold text-[#3b82f6] hover:text-[#1d4ed8] transition-colors py-2"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                View Details →
+              </Link>
             </div>
           ))}
         </div>

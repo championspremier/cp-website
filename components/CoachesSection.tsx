@@ -9,6 +9,7 @@ const coaches = [
     image: "/coaches/stanley.png",
     bio: "Former pro at all levels in America and Division II in Liga Portugal.",
     instagram: "https://www.instagram.com/stan.alves9/",
+    objectPosition: "center top",
   },
   {
     name: "Jonathan Bolaños",
@@ -23,6 +24,7 @@ const coaches = [
     image: "/coaches/mert.png",
     bio: "Formerly from Turkey, Mert brings a contagious high-level energy to our GK sessions.",
     instagram: "https://www.instagram.com/themerco_/",
+    objectPosition: "center top",
   },
   {
     name: "Dylan Zane",

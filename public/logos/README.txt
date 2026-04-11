@@ -1,1 +1,0 @@
-Place logo files here.
