@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -40,10 +40,13 @@ const changes = [
   { label: "Time on Ball >3s", value: "+53.3%" },
 ];
 
+const FRAME_COUNT = 80;
+const FRAME_PATH = (i: number, isMobile: boolean) =>
+  `/video-frames/player-scan-${isMobile ? "mobile" : "desktop"}/frame-${String(i).padStart(3, "0")}.jpg`;
+
 export default function PlayerScanSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const lastTimeRef = useRef(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const leftStatsRef = useRef<HTMLDivElement>(null);
   const afterStatsRef = useRef<HTMLDivElement>(null);
@@ -52,17 +55,86 @@ export default function PlayerScanSection() {
   const changesCombinedRef = useRef<HTMLDivElement>(null);
   const beforeBarRefs = useRef<(HTMLDivElement | null)[]>([]);
   const afterBarRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const framesRef = useRef<HTMLImageElement[]>([]);
+  const lastFrameRef = useRef(-1);
+  const [framesReady, setFramesReady] = useState(false);
 
+  // Preload frames
+  useEffect(() => {
+    let cancelled = false;
+    let loadedCount = 0;
+    const images: HTMLImageElement[] = [];
+    const isMobile =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+
+    for (let i = 1; i <= FRAME_COUNT; i++) {
+      const img = new Image();
+      img.src = FRAME_PATH(i, isMobile);
+      img.onload = () => {
+        loadedCount++;
+        if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
+      };
+      images.push(img);
+    }
+    framesRef.current = images;
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Canvas setup
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const drawFrame = (index: number) => {
+      const img = framesRef.current[index];
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+
+      // Cover: fill canvas while preserving aspect ratio, crop overflow
+      const scale = Math.max(cw / iw, ch / ih);
+      const drawW = iw * scale;
+      const drawH = ih * scale;
+      const dx = (cw - drawW) / 2;
+      const dy = (ch - drawH) / 2;
+
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.drawImage(img, dx, dy, drawW, drawH);
+      lastFrameRef.current = index;
+    };
+
+    const resizeCanvas = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      drawFrame(lastFrameRef.current >= 0 ? lastFrameRef.current : 0);
+    };
+
+    (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame = drawFrame;
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
+  }, [framesReady]);
+
+  // ScrollTrigger setup
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
-
     const wrapper = wrapperRef.current;
-    const video = videoRef.current;
-    if (!wrapper || !video) return;
+    const canvas = canvasRef.current;
+    if (!wrapper || !canvas) return;
+    const drawFrameFn = (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame;
 
     let loadRefreshTimer: ReturnType<typeof setTimeout> | undefined;
-    let onLoaded: (() => void) | undefined;
-
     const handleLoad = () => {
       loadRefreshTimer = setTimeout(() => {
         ScrollTrigger.refresh();
@@ -72,115 +144,80 @@ export default function PlayerScanSection() {
     window.addEventListener("load", handleLoad);
 
     const ctx = gsap.context(() => {
-      let scrubSetup = false;
-      const setupPinScrub = () => {
-        if (scrubSetup) return;
-        scrubSetup = true;
+      ScrollTrigger.create({
+        trigger: wrapper,
+        start: "top top",
+        end: "+=300%",
+        pin: true,
+        pinSpacing: true,
+        scrub: 1,
+        refreshPriority: -2,
+        onUpdate: (self) => {
+          // Frame scrub
+          const frameIndex = Math.min(FRAME_COUNT - 1, Math.floor(self.progress * FRAME_COUNT));
+          if (frameIndex !== lastFrameRef.current && drawFrameFn) drawFrameFn(frameIndex);
 
-        ScrollTrigger.create({
-          trigger: wrapper,
-          start: "top top",
-          end: "+=300%",
-          pin: true,
-          pinSpacing: true,
-          scrub: 1,
-          refreshPriority: -2,
-          onUpdate: (self) => {
-            if (video.duration && !isNaN(video.duration)) {
-              const newTime = self.progress * video.duration;
-              if (Math.abs(newTime - lastTimeRef.current) > 0.033) {
-                video.currentTime = newTime;
-                lastTimeRef.current = newTime;
-              }
+          const p = self.progress;
+
+          if (titleRef.current) {
+            if (p < 0.1) titleRef.current.style.opacity = "0";
+            else if (p < 0.15) titleRef.current.style.opacity = String((p - 0.1) / 0.05);
+            else if (p < 0.9) titleRef.current.style.opacity = "1";
+            else if (p < 0.99) titleRef.current.style.opacity = String(1 - (p - 0.99) / 0.05);
+            else titleRef.current.style.opacity = "0";
+          }
+
+          if (leftStatsRef.current) {
+            if (p < 0.4) leftStatsRef.current.style.opacity = "0";
+            else if (p < 0.45) leftStatsRef.current.style.opacity = String((p - 0.4) / 0.05);
+            else if (p < 0.65) leftStatsRef.current.style.opacity = "1";
+            else if (p < 0.7) leftStatsRef.current.style.opacity = String(1 - (p - 0.65) / 0.05);
+            else leftStatsRef.current.style.opacity = "0";
+          }
+
+          if (p >= 0.4 && p <= 0.55) {
+            const barProgress = Math.min(1, (p - 0.4) / 0.15);
+            beforeStats.forEach((stat) => {
+              const bar = beforeBarRefs.current[stat.index];
+              if (bar) bar.style.width = `${stat.width * barProgress}%`;
+            });
+          }
+
+          if (afterStatsRef.current) {
+            if (p < 0.7) afterStatsRef.current.style.opacity = "0";
+            else if (p < 0.75) afterStatsRef.current.style.opacity = String((p - 0.7) / 0.05);
+            else if (p < 0.85) afterStatsRef.current.style.opacity = "1";
+            else if (p < 0.9) afterStatsRef.current.style.opacity = String(1 - (p - 0.85) / 0.05);
+            else afterStatsRef.current.style.opacity = "0";
+          }
+
+          if (p >= 0.7 && p <= 0.8) {
+            const barProgress = Math.min(1, (p - 0.7) / 0.1);
+            afterStats.forEach((stat, i) => {
+              const bar = afterBarRefs.current[i];
+              if (bar) bar.style.width = `${stat.width * barProgress}%`;
+            });
+          }
+
+          [changesLeftRef, changesRightRef, changesCombinedRef].forEach((ref) => {
+            if (ref.current) {
+              if (p < 0.86) ref.current.style.opacity = "0";
+              else if (p < 0.9) ref.current.style.opacity = String((p - 0.86) / 0.05);
+              else if (p < 0.99) ref.current.style.opacity = "1";
+              else if (p < 1) ref.current.style.opacity = String(1 - (p - 0.99) / 0.05);
+              else ref.current.style.opacity = "0";
             }
-
-            const p = self.progress;
-
-            if (titleRef.current) {
-              if (p < 0.1) titleRef.current.style.opacity = "0";
-              else if (p < 0.15) titleRef.current.style.opacity = String((p - 0.1) / 0.05);
-              else if (p < 0.9) titleRef.current.style.opacity = "1";
-              else if (p < 0.99) titleRef.current.style.opacity = String(1 - (p - 0.99) / 0.05);
-              else titleRef.current.style.opacity = "0";
-            }
-
-            if (leftStatsRef.current) {
-              if (p < 0.4) leftStatsRef.current.style.opacity = "0";
-              else if (p < 0.45) leftStatsRef.current.style.opacity = String((p - 0.4) / 0.05);
-              else if (p < 0.65) leftStatsRef.current.style.opacity = "1";
-              else if (p < 0.7) leftStatsRef.current.style.opacity = String(1 - (p - 0.65) / 0.05);
-              else leftStatsRef.current.style.opacity = "0";
-            }
-
-            if (p >= 0.4 && p <= 0.55) {
-              const barProgress = Math.min(1, (p - 0.4) / 0.15);
-              beforeStats.forEach((stat) => {
-                const bar = beforeBarRefs.current[stat.index];
-                if (bar) bar.style.width = `${stat.width * barProgress}%`;
-              });
-            }
-
-            if (afterStatsRef.current) {
-              if (p < 0.7) afterStatsRef.current.style.opacity = "0";
-              else if (p < 0.75) afterStatsRef.current.style.opacity = String((p - 0.7) / 0.05);
-              else if (p < 0.85) afterStatsRef.current.style.opacity = "1";
-              else if (p < 0.9) afterStatsRef.current.style.opacity = String(1 - (p - 0.85) / 0.05);
-              else afterStatsRef.current.style.opacity = "0";
-            }
-
-            if (p >= 0.7 && p <= 0.8) {
-              const barProgress = Math.min(1, (p - 0.7) / 0.1);
-              afterStats.forEach((stat, i) => {
-                const bar = afterBarRefs.current[i];
-                if (bar) bar.style.width = `${stat.width * barProgress}%`;
-              });
-            }
-
-            if (changesLeftRef.current) {
-              if (p < 0.86) changesLeftRef.current.style.opacity = "0";
-              else if (p < 0.9) changesLeftRef.current.style.opacity = String((p - 0.86) / 0.05);
-              else if (p < 0.99) changesLeftRef.current.style.opacity = "1";
-              else if (p < 1) changesLeftRef.current.style.opacity = String(1 - (p - 0.99) / 0.05);
-              else changesLeftRef.current.style.opacity = "0";
-            }
-
-            if (changesRightRef.current) {
-              if (p < 0.86) changesRightRef.current.style.opacity = "0";
-              else if (p < 0.9) changesRightRef.current.style.opacity = String((p - 0.86) / 0.05);
-              else if (p < 0.99) changesRightRef.current.style.opacity = "1";
-              else if (p < 1) changesRightRef.current.style.opacity = String(1 - (p - 0.99) / 0.05);
-              else changesRightRef.current.style.opacity = "0";
-            }
-
-            if (changesCombinedRef.current) {
-              if (p < 0.86) changesCombinedRef.current.style.opacity = "0";
-              else if (p < 0.9) changesCombinedRef.current.style.opacity = String((p - 0.86) / 0.05);
-              else if (p < 0.99) changesCombinedRef.current.style.opacity = "1";
-              else if (p < 1) changesCombinedRef.current.style.opacity = String(1 - (p - 0.99) / 0.05);
-              else changesCombinedRef.current.style.opacity = "0";
-            }
-          },
-        });
-      };
-
-      onLoaded = () => setupPinScrub();
-
-      if (video.readyState >= 2) {
-        setupPinScrub();
-      } else {
-        video.addEventListener("loadedmetadata", onLoaded, { once: true });
-      }
+          });
+        },
+      });
     }, wrapper);
 
     return () => {
       if (loadRefreshTimer !== undefined) clearTimeout(loadRefreshTimer);
       window.removeEventListener("load", handleLoad);
-      if (onLoaded) {
-        video.removeEventListener("loadedmetadata", onLoaded);
-      }
       ctx.revert();
     };
-  }, []);
+  }, [framesReady]);
 
   return (
     <div
@@ -192,19 +229,10 @@ export default function PlayerScanSection() {
         overflow: "hidden",
       }}
     >
-      <div style={{ width: "100%", height: "100vh" }}>
-        <video
-          ref={videoRef}
-          src="/video/player-scan.mp4"
-          muted
-          playsInline
-          preload="auto"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: "block",
-          }}
+      <div style={{ width: "100%", height: "100vh", background: "#000" }}>
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%", display: "block" }}
         />
       </div>
 
