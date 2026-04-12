@@ -168,7 +168,7 @@ export default function Footer() {
             <div>
               <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#111111]">Address</h3>
               <p className="text-sm text-[#6b7280] leading-relaxed">
-                44645 Guilford Dr STE 211, Ashburn, VA 20147
+                405 E Laburnum Ave Ste 3, Richmond, VA 23222-2134
               </p>
               <h3 className="mb-2 mt-6 text-sm font-semibold uppercase tracking-wider text-[#111111]">Locations</h3>
               <ul className="flex flex-col gap-1 text-sm text-[#6b7280]">
