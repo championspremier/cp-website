@@ -33,6 +33,17 @@ function renderStep(step: PlanStep): Step {
             ))}
           </ul>
         )}
+        {step.link && (
+          <a
+            href={step.link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-block rounded-lg px-5 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            style={{ background: GRADIENT }}
+          >
+            {step.link.label} →
+          </a>
+        )}
       </>
     ),
   };
