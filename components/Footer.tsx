@@ -132,6 +132,9 @@ export default function Footer() {
                 <a href="/programs/champions-premier" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
                   Champions Premier
                 </a>
+                <a href="/programs/highlight-film" className="text-sm text-[#6b7280] transition-colors hover:text-[#111111]">
+                  Highlight Film
+                </a>
               </nav>
             </div>
             <div>

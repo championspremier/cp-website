@@ -19,6 +19,7 @@ const NAV_LINKS: NavLink[] = [
     children: [
       { label: "Champions Premier", href: "/programs/champions-premier" },
       { label: "Homegrown", href: "https://homegrown-app.com", target: "_blank" },
+      { label: "Create Your Highlight Film", href: "/programs/highlight-film" },
     ],
   },
   { label: "Blog", href: "/blog" },

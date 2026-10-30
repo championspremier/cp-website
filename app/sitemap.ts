@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/programs/champions-premier`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${baseUrl}/programs/highlight-film`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/sponsors`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/privacy-policy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
