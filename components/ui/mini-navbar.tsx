@@ -18,15 +18,25 @@ const NAV_LINKS: NavLink[] = [
     href: "/programs/champions-premier",
     children: [
       { label: "Champions Premier", href: "/programs/champions-premier" },
+      { label: "Champions Campus", href: "https://champions-campus.com", target: "_blank" },
       { label: "Homegrown", href: "https://homegrown-app.com", target: "_blank" },
-      { label: "Create Your Highlight Film", href: "/programs/highlight-film" },
     ],
   },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
-  { label: "Shop", target: "_blank", href: "https://championspremier.myshopify.com/" },
+  {
+    label: "Shop",
+    target: "_blank",
+    href: "https://championspremier.myshopify.com/",
+    children: [
+      { label: "Merch", href: "https://championspremier.myshopify.com/", target: "_blank" },
+      { label: "Create Your Highlight Film", href: "/programs/highlight-film" },
+    ],
+  },
   { label: "Sponsors", href: "/sponsors" },
 ];
+
+const isExternal = (href: string) => /^https?:\/\//.test(href);
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -134,18 +144,25 @@ export function Navbar() {
                           gap: "2px",
                         }}
                       >
-                        {link.children?.map((child) => (
-                          <Link
-                            key={child.label}
-                            href={child.href}
-                            {...(child.target
-                              ? { target: child.target, rel: "noopener noreferrer" as const }
-                              : {})}
-                            className="block px-4 py-2.5 text-sm font-medium text-white/90 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap"
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
+                        {link.children?.map((child) => {
+                          const className =
+                            "block px-4 py-2.5 text-sm font-medium text-white/90 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap";
+                          return isExternal(child.href) ? (
+                            <a
+                              key={child.label}
+                              href={child.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={className}
+                            >
+                              {child.label}
+                            </a>
+                          ) : (
+                            <Link key={child.label} href={child.href} className={className}>
+                              {child.label}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
@@ -228,19 +245,31 @@ export function Navbar() {
                   </Link>
                   {link.children && link.children.length > 0 && (
                     <div className="flex flex-col ml-4 border-l border-white/10 pl-3 mb-2">
-                      {link.children.map((child) => (
-                        <Link
-                          key={child.label}
-                          href={child.href}
-                          {...(child.target
-                            ? { target: child.target, rel: "noopener noreferrer" as const }
-                            : {})}
-                          className="text-sm text-white/70 py-2 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+                      {link.children.map((child) => {
+                        const className =
+                          "text-sm text-white/70 py-2 px-3 rounded-lg hover:bg-white/10 hover:text-white transition-colors";
+                        return isExternal(child.href) ? (
+                          <a
+                            key={child.label}
+                            href={child.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={className}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            {child.label}
+                          </a>
+                        ) : (
+                          <Link
+                            key={child.label}
+                            href={child.href}
+                            className={className}
+                            onClick={() => setMenuOpen(false)}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
