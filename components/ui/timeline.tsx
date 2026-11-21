@@ -24,7 +24,8 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
     offset: ["start 10%", "end 50%"],
   });
 
-  const heightTransform = useTransform(scrollYProgress, [0, 1], [0, height]);
+  // Grow the line with scaleY (compositor only) rather than animating height
+  const scaleYTransform = useTransform(scrollYProgress, [0, 1], [0, 1]);
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
 
   return (
@@ -83,7 +84,9 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
         >
           <motion.div
             style={{
-              height: heightTransform,
+              height,
+              scaleY: scaleYTransform,
+              transformOrigin: "top",
               opacity: opacityTransform,
             }}
             className="absolute inset-x-0 top-0  w-[2px] bg-gradient-to-t from-[#3b82f6] via-[#7bb8d4] to-transparent from-[0%] via-[10%] rounded-full"
