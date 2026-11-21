@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { decodeNearbyFrames, sizeFrameCanvas } from "@/lib/frameCanvas";
 
 const beforeStats = [
   { label: "Scanning Right", value: "20.0%", width: 20, index: 0 },
@@ -57,32 +58,51 @@ export default function PlayerScanSection() {
   const afterBarRefs = useRef<(HTMLDivElement | null)[]>([]);
   const framesRef = useRef<HTMLImageElement[]>([]);
   const lastFrameRef = useRef(-1);
+  // Frame the scroll position asks for, even if it hadn't loaded yet
+  const wantedFrameRef = useRef(0);
   const [framesReady, setFramesReady] = useState(false);
 
-  // Preload frames
+  // Preload frames once the section is about two screens away — it sits near
+  // the bottom of the page, so loading at mount competes with everything above
   useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
     let cancelled = false;
-    let loadedCount = 0;
-    const images: HTMLImageElement[] = [];
-    const isMobile =
-      typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
 
-    for (let i = 1; i <= FRAME_COUNT; i++) {
-      const img = new Image();
-      img.src = FRAME_PATH(i, isMobile);
-      img.onload = () => {
-        loadedCount++;
-        if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
-      };
-      img.onerror = () => {
-        loadedCount++;
-        if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
-      };
-      images.push(img);
-    }
-    framesRef.current = images;
+    const loadFrames = () => {
+      let loadedCount = 0;
+      const images: HTMLImageElement[] = [];
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      for (let i = 1; i <= FRAME_COUNT; i++) {
+        const img = new Image();
+        img.src = FRAME_PATH(i, isMobile);
+        img.onload = () => {
+          loadedCount++;
+          if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
+        };
+        img.onerror = () => {
+          loadedCount++;
+          if (loadedCount === FRAME_COUNT && !cancelled) setFramesReady(true);
+        };
+        images.push(img);
+      }
+      framesRef.current = images;
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        loadFrames();
+      },
+      { rootMargin: "200% 0px" }
+    );
+    observer.observe(wrapper);
+
     return () => {
       cancelled = true;
+      observer.disconnect();
     };
   }, []);
 
@@ -112,27 +132,32 @@ export default function PlayerScanSection() {
       ctx.clearRect(0, 0, cw, ch);
       ctx.drawImage(img, dx, dy, drawW, drawH);
       lastFrameRef.current = index;
+      decodeNearbyFrames(framesRef.current, index);
     };
 
+    // Only reallocate (and redraw) when the size actually changes — iOS fires
+    // resize repeatedly as the address bar collapses during scroll
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      drawFrame(lastFrameRef.current >= 0 ? lastFrameRef.current : 0);
+      if (sizeFrameCanvas(canvas, framesRef.current)) drawFrame(wantedFrameRef.current);
     };
 
     (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame = drawFrame;
-    resizeCanvas();
+    sizeFrameCanvas(canvas, framesRef.current);
+    drawFrame(wantedFrameRef.current);
     window.addEventListener("resize", resizeCanvas);
     return () => window.removeEventListener("resize", resizeCanvas);
   }, [framesReady]);
 
-  // ScrollTrigger setup
+  // ScrollTrigger setup — runs once. It must not depend on framesReady:
+  // re-creating it would tear down and rebuild the pin mid-scroll when the
+  // frames finish loading. drawFrame is read from the canvas at call time.
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const wrapper = wrapperRef.current;
     const canvas = canvasRef.current;
     if (!wrapper || !canvas) return;
-    const drawFrameFn = (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame;
+    const drawFrameFn = (i: number) =>
+      (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame?.(i);
 
     let loadRefreshTimer: ReturnType<typeof setTimeout> | undefined;
     const handleLoad = () => {
@@ -155,7 +180,8 @@ export default function PlayerScanSection() {
         onUpdate: (self) => {
           // Frame scrub
           const frameIndex = Math.min(FRAME_COUNT - 1, Math.floor(self.progress * FRAME_COUNT));
-          if (frameIndex !== lastFrameRef.current && drawFrameFn) drawFrameFn(frameIndex);
+          wantedFrameRef.current = frameIndex;
+          if (frameIndex !== lastFrameRef.current) drawFrameFn(frameIndex);
 
           const p = self.progress;
 
@@ -217,7 +243,7 @@ export default function PlayerScanSection() {
       window.removeEventListener("load", handleLoad);
       ctx.revert();
     };
-  }, [framesReady]);
+  }, []);
 
   return (
     <div

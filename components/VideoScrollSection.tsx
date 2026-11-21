@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { decodeNearbyFrames, sizeFrameCanvas } from "@/lib/frameCanvas";
 
 const SENTENCE_1 = "A professional environment is where";
 const SENTENCE_2 = "creativity meets a winning mentality.";
@@ -19,6 +20,8 @@ export default function VideoScrollSection() {
   const textContainerRef = useRef<HTMLDivElement>(null);
   const framesRef = useRef<HTMLImageElement[]>([]);
   const lastFrameRef = useRef(-1);
+  // Frame the scroll position asks for, even if it hadn't loaded yet
+  const wantedFrameRef = useRef(0);
   const [framesReady, setFramesReady] = useState(false);
 
   // Preload all frames on mount
@@ -60,10 +63,10 @@ export default function VideoScrollSection() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Only reallocate (and redraw) when the size actually changes — iOS fires
+    // resize repeatedly as the address bar collapses during scroll
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      drawFrame(lastFrameRef.current >= 0 ? lastFrameRef.current : 0);
+      if (sizeFrameCanvas(canvas, framesRef.current)) drawFrame(wantedFrameRef.current);
     };
 
     const drawFrame = (index: number) => {
@@ -85,12 +88,14 @@ export default function VideoScrollSection() {
       ctx.clearRect(0, 0, cw, ch);
       ctx.drawImage(img, dx, dy, drawW, drawH);
       lastFrameRef.current = index;
+      decodeNearbyFrames(framesRef.current, index);
     };
 
     // Expose drawFrame on canvas for the scroll handler to use
     (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame = drawFrame;
 
-    resizeCanvas();
+    sizeFrameCanvas(canvas, framesRef.current);
+    drawFrame(wantedFrameRef.current);
     window.addEventListener("resize", resizeCanvas);
 
     return () => {
@@ -98,7 +103,9 @@ export default function VideoScrollSection() {
     };
   }, [framesReady]);
 
-  // Set up ScrollTrigger animations
+  // Set up ScrollTrigger animations once. They must not depend on framesReady:
+  // re-creating them would tear down and rebuild the pin mid-scroll when the
+  // frames finish loading. drawFrame is read from the canvas at call time.
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const wrapper = wrapperRef.current;
@@ -107,7 +114,8 @@ export default function VideoScrollSection() {
     if (!wrapper || !box || !canvas) return;
 
     let timer: ReturnType<typeof setTimeout>;
-    const drawFrameFn = (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame;
+    const drawFrameFn = (i: number) =>
+      (canvas as HTMLCanvasElement & { _drawFrame?: (i: number) => void })._drawFrame?.(i);
 
     const ctx = gsap.context(() => {
       // Phase 1 — Circle expands as section enters viewport (before pin)
@@ -137,7 +145,8 @@ export default function VideoScrollSection() {
             FRAME_COUNT - 1,
             Math.floor(self.progress * FRAME_COUNT)
           );
-          if (frameIndex !== lastFrameRef.current && drawFrameFn) {
+          wantedFrameRef.current = frameIndex;
+          if (frameIndex !== lastFrameRef.current) {
             drawFrameFn(frameIndex);
           }
         },
@@ -206,7 +215,7 @@ export default function VideoScrollSection() {
       clearTimeout(timer);
       ctx.revert();
     };
-  }, [framesReady]);
+  }, []);
 
   return (
     <div
