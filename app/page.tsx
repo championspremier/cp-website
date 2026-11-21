@@ -13,6 +13,7 @@ import CoachesSection from "@/components/CoachesSection";
 import PlayerScanSection from "@/components/PlayerScanSection";
 import Footer from "@/components/Footer";
 import HomeScrollRefresher from "@/components/HomeScrollRefresher";
+import CampusLightbox from "@/components/CampusLightbox";
 
 const MissionSection = dynamic(() => import("@/components/MissionSection"), {
   ssr: false,
@@ -28,6 +29,7 @@ export default function Home() {
   return (
     <main>
       <HomeScrollRefresher />
+      <CampusLightbox />
       <Navbar />
       <HeroSection />
       <VideoScrollSection />
